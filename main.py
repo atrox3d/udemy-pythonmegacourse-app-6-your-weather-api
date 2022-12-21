@@ -4,17 +4,23 @@ from pathlib import Path
 
 app = Flask(__name__)
 
+DATA_DIR = "data_small"
+stations_file = "stations.txt"
+stations_path = Path(DATA_DIR, stations_file)
+stations = pd.read_csv(str(stations_path), skiprows=17)
+stations.columns = stations.columns.str.strip()
+stations = stations[["STAID", "STANAME"]]
 
 @app.route("/")
 @app.route("/home/")
 def home():
-    return render_template("home.html")
+    print(stations.columns)
+    return render_template("home.html", data=stations.to_html(index=False))
 
 
 @app.route("/api/v1/<station>/<date>")
 def about(station, date):
     try:
-        DATA_DIR = "data_small"
         filename = f"TG_STAID{station:>06s}.txt"
         csv_path = Path(DATA_DIR, filename)
         df = pd.read_csv(str(csv_path), skiprows=20)
