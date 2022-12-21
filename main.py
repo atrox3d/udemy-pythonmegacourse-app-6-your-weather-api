@@ -11,6 +11,7 @@ stations = pd.read_csv(str(stations_path), skiprows=17)
 stations.columns = stations.columns.str.strip()
 stations = stations[["STAID", "STANAME"]]
 
+
 @app.route("/")
 @app.route("/home/")
 def home():
@@ -18,7 +19,9 @@ def home():
     return render_template("home.html", data=stations.to_html(index=False))
 
 
-@app.route("/api/v1/<station>/<date>")
+API_ROOT = '/api/v1'
+
+@app.route(f"{API_ROOT}/<station>/<date>")
 def about(station, date):
     try:
         filename = f"TG_STAID{station:>06s}.txt"
@@ -36,6 +39,28 @@ def about(station, date):
         return {
             "error": f"station {station} does not exist"
         }
+
+
+@app.route(f'{API_ROOT}/<station>')
+def all_data(station):
+    filename = f"TG_STAID{station:>06s}.txt"
+    csv_path = Path(DATA_DIR, filename)
+    df = pd.read_csv(str(csv_path), skiprows=20)
+    df.columns = df.columns.str.strip()
+
+    result = df[:100].to_dict(orient='records')
+    return result
+
+
+@app.route(f'{API_ROOT}/yearly/<station>/<year>')
+def yearly(station, year):
+    filename = f"TG_STAID{station:>06s}.txt"
+    csv_path = Path(DATA_DIR, filename)
+    df = pd.read_csv(str(csv_path), skiprows=20)
+    df.columns = df.columns.str.strip()
+
+    result = df[df.DATE.map(str).str.startswith(year)].to_dict(orient="records")
+    return result
 
 if __name__ == '__main__':
     app.run(debug=True)
